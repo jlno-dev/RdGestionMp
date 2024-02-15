@@ -491,27 +491,24 @@ namespace LibAdoBDMdp.BdKeePass
         private void ImporterCompte(ParamRechercheBdKP paramRechercheKP, List<Compte> listeCompteAImporter)
         {
             PwObjectList<PwEntry> listeEntreesKP = new PwObjectList<PwEntry>();
-            Dictionary<string, Compte> dicoComptes = new Dictionary<string, Compte>(); 
+            Dictionary<string, Compte> dicoComptesKP = new Dictionary<string, Compte>(); 
 
             RechercherEntreeKP(paramRechercheKP, listeEntreesKP);            
-            GenererDicoComptes(listeEntreesKP, RenvoyerCleDossierTitleUserName, dicoComptes);
+            GenererDicoComptes(listeEntreesKP, RenvoyerCleDossierTitleUserName, dicoComptesKP);
 
             foreach (Compte compteAImporter in listeCompteAImporter)
             {
                 //PwEntry entreeKP = new PwEntry(true, true); // creation entreeKP avec nouveau uid et mise a jour des dates
-                string cleRecherche = "/"+_bdKeep.RootGroup.Name +RenvoyerCleDossierBaseUti(compteAImporter, paramRechercheKP.SeparateurDossier);
-                Console.WriteLine("ImporterCompte.RenvoyerCleDossierBaseUti()" + cleRecherche);
+                string cleRecherche  = BdKeepCheminRacine + _bdKeep.RootGroup.Name + RenvoyerCleDossierBaseUti(compteAImporter, paramRechercheKP.SeparateurDossier);
                 Compte comptePresent;
-                dicoComptes.TryGetValue(cleRecherche, out comptePresent);
+                dicoComptesKP.TryGetValue(cleRecherche, out comptePresent);
                 if (comptePresent != null)
                 {
                     MettreAJourCompte(comptePresent, compteAImporter);
                     MettreAJourEntreeKP(comptePresent);
-                    Console.WriteLine("Compte mis à jour" + compteAImporter.NomCompte);
                 }
                 else
                 {
-                    Console.WriteLine("Compte ajouté" + compteAImporter.NomCompte);
                     PwEntry entreeKP = CreerEntreeKP(compteAImporter);
                     PwGroup groupe = RechercherCreerGroupeKP(compteAImporter.CheminComplet, true);
                     groupe.AddEntry(entreeKP, false);
