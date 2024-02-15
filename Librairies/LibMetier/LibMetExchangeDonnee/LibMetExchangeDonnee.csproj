@@ -42,13 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Entites\EchangeDonnees.cs" />
-    <Compile Include="Export\Csv\ExportCompteCsv.cs" />
     <Compile Include="Entites\ParamExportCsv.cs" />
     <Compile Include="Formats\FichierFormatCsv.cs" />
     <Compile Include="Formats\ParamFormatCsv.cs" />
     <Compile Include="Interfaces\ICompteTransformable.cs" />
     <Compile Include="Interfaces\IDonneesConvertible.cs" />
     <Compile Include="Interfaces\IExportable.cs" />
+    <Compile Include="Interfaces\IImportable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -67,7 +67,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Conversion\" />
-    <Folder Include="Import\" />
+    <Folder Include="Export\Csv\" />
+    <Folder Include="Import\Csv\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

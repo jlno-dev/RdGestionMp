@@ -121,7 +121,7 @@ namespace RdKeepExport.Traitements
                         if (reponse == EDlgDemande.ANNULER) 
                         {
                             listeCompte.Clear();
-                            return Convert.ToInt32(ECodeRetour.CodeRetourOk);
+                            return GererEnum.RenvoyerCodeRetourOk();
                         }
                     }
 
