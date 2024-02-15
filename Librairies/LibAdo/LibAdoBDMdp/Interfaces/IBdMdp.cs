@@ -12,8 +12,10 @@ namespace LibAdoBDMdp.Interfaces
         void FermerBase();
         void Synchroniser();
         void SauvegarderBase();
-        void ValiderModificationMdp(List<Compte> listeCompte);
-         void RechercherComptes(Parametre param, List<Compte> listeResultat);
+        void ModifierCompteMotDePasse(List<Compte> listeCompte);
+        //void Importer(List<Compte> listeCompte);
+        void Importer(Parametre param, List<Compte> listeCompte);
+        void RechercherComptes(Parametre param, List<Compte> listeResultat);
        List<Compte> DonnerListeComptes();      
     }
 }

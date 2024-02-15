@@ -15,56 +15,59 @@ using KeePassLib.Security;
 
 using LibCommune.Entites;
 using LibAdoBDMdp.Interfaces;
+using LibAdoBDMdp.Delegues;
 using LibCommune.Exceptions;
 
 namespace LibAdoBDMdp.BdKeePass
 {
+    //public delegate string ConstruireCleEntreeKP(PwEntry entreeKP, string separateur);
+
+    //public delegate string ConstruireCleCompte(Compte compte, string separateur);
     public class BdMdpKee : IBdMdp
     {
         private PwDatabase _bdKeep;
         private IOConnectionInfo _bdKeepIoConnInfo;
         private CompositeKey _bdKeepCompKey;
         private Dictionary<string, PwUuid> _dicUidGroupes;
-        //private Dictionary<string, string> _dicUidGroupes;
-        private PwObjectList<PwEntry> _listeEntrees;
-        //private SearchParameters _paramRecherche;
+        private PwObjectList<PwEntry> _listeEntreesKP;
         private PwGroup _grpCourant;
         private IStatusLogger _logs;
-        //private PwEntry _entreeCourante;
         private bool _siSauvegardee;
-        private Dictionary<string, Compte> _dicComptes { get; set; }
+        private Dictionary<string, Compte> _dicComptes;
+        private string _bdKeepMdp;
         //private List<Compte> _listeComptes;
-        protected string BdKeepFichier { get; private set; }
-        protected string BdKeepMdp { get; private set; }
+        protected string BdKeepCheminRacine;
+        protected string SeparateurDossierInerne;
+        //private ParamBdMdpKee _paramBdMdpKee;
+
+        protected string FichierBdKeePass { get; private set; }
         protected byte[] BdKeepHashFile { get; private set; }
-        
-        public string SeprateurDossier { get; set; }
-        public string BdKeepCheminCourant;
-        public string BdKeepCheminRacine;
-        public bool SiBaseOuverte { get { return _bdKeep.IsOpen; } }
-        public bool SiBaseModifiee
-        {
-            get
-            {
-                return TesterSiBaseModifiee();
-            }
-        }
+        public bool SiBaseOuverte { get => _bdKeep.IsOpen; }
+        public bool SiBaseModifiee { get => TesterSiBaseModifiee(); }
         public bool SiModificationValidee
         {
             get { return _siSauvegardee; }
             protected set { _siSauvegardee = value; }
         }
 
-        public BdMdpKee(string keeFichierBd)
+        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        // Méthodes publiqes 
+        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+        public BdMdpKee(string fichierKP)
         {
-            Initialiser(keeFichierBd, string.Empty);        
+            InitialiserBdMdpKP(fichierKP, string.Empty);
         }
-        public BdMdpKee(string keeFichierBd, string keeMdp)
+        public BdMdpKee(string fichierKP, string mdpKP)
         {
-            Initialiser(keeFichierBd, keeMdp);            
+            InitialiserBdMdpKP(fichierKP, mdpKP);            
         }
  
         #region implementation IBdCompte
+        /// <summary>
+        /// 
+        /// </summary>
         public void FermerBase()
         {
             //Debug.WriteLine("BdMdpKee.FermerBase()");
@@ -78,16 +81,26 @@ namespace LibAdoBDMdp.BdKeePass
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void OuvrirBase()
         {
-            Ouvrir(this.BdKeepMdp);
+            OuvrirBdMpKP(this._bdKeepMdp);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mdp"></param>
         public void OuvrirBase(string mdp)
         {
-            Ouvrir(mdp);
+            OuvrirBdMpKP(mdp);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void SauvegarderBase()
         {
             try
@@ -102,10 +115,23 @@ namespace LibAdoBDMdp.BdKeePass
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public List<Compte> DonnerListeComptes()
         {
-            return  new List<Compte>(_dicComptes.Values);
+            return new List<Compte>();
+            //return new List<Compte>(_listeComptes);
+            //return  new List<Compte>(_dicComptes.Values);
         }
+
+
+        public void Importer(Parametre paramRecherche, List<Compte> listeCompteAImporter)
+        {
+            ImporterCompte((ParamRechercheBdKP)paramRecherche, listeCompteAImporter);
+        }
+
         public void Synchroniser()
         {
             Debug.WriteLine("BdMdpKee.Synchroniser() : AFAIRE");
@@ -139,14 +165,24 @@ namespace LibAdoBDMdp.BdKeePass
             _bdKeep.MergeIn(bdTemp, methodeFusion);
         }
 
-        public void RechercherComptes(Parametre param, List<Compte> listeResultat)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="listeResultat"></param>
+        public void RechercherComptes(Parametre paramRecherche, List<Compte> listeResultat)
         {
-            RechercherEntreeKP(param, listeResultat);
+            RechercherEntreeKP((ParamRechercheBdKP)paramRecherche, _listeEntreesKP);
+            GenererListeComptes(_listeEntreesKP, listeResultat);
         }
 
-        public void ValiderModificationMdp(List<Compte> listeCompte)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="listeCompte"></param>
+        public void ModifierCompteMotDePasse(List<Compte> listeCompte)
         {
-            //_listeEntrees
+            //_listeEntreesKP
             foreach (Compte compte in listeCompte)
             {
                 PwUuid uuid = new PwUuid(compte.Uid);
@@ -157,44 +193,52 @@ namespace LibAdoBDMdp.BdKeePass
                 }
             }
         }
+        #endregion implementation IBdCompte
 
-        #endregion
-        private void Initialiser(string keeFichierBd, string keeMdp)
+        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        // Implémentation des méthodes privées, protégées
+        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="fichierKP"></param>
+        /// <param name="mdpKP"></param>
+        private void InitialiserBdMdpKP(string fichierKP, string mdpKP)
         {
             _bdKeep= new PwDatabase();
-            _bdKeepIoConnInfo = new IOConnectionInfo { Path = keeFichierBd};
+            _bdKeepIoConnInfo = new IOConnectionInfo { Path = fichierKP};
             _bdKeepCompKey = new CompositeKey();
             _dicUidGroupes = new Dictionary<string, PwUuid>();
-            //_dicUidGroupes = new Dictionary<PwUuid, string>();
-            _listeEntrees = new PwObjectList<PwEntry>();
-            //_paramRecherche = null;
+            _listeEntreesKP = new PwObjectList<PwEntry>();
             _grpCourant = null;
             _logs = null;
-            //_entreeCourante = null;
             _siSauvegardee = false;
             _dicComptes = new Dictionary<string, Compte>();
 
-            BdKeepFichier = keeFichierBd;
-            BdKeepMdp = keeMdp;
+            FichierBdKeePass = fichierKP;
+            _bdKeepMdp = mdpKP;
             BdKeepHashFile = null;
             SiModificationValidee = false; 
-            SeprateurDossier = "/";
-            BdKeepCheminCourant = string.Empty;
-            BdKeepCheminRacine = string.Empty;
+            BdKeepCheminRacine = "/";
+            SeparateurDossierInerne = "/";
         }
-        private void Ouvrir(string mdp)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mdp"></param>
+        private void OuvrirBdMpKP(string mdp)
         {
             if (string.IsNullOrEmpty(mdp))
                 throw new ArgumentNullException("BdMdpKee.OuvrirBase(mpd est vide)");
             try
             {
                 _bdKeepCompKey.AddUserKey(new KcpPassword(mdp));
-                BdKeepMdp = mdp;
-                //this.Initialiser(pkbFichier, pkbMotDePasse);
-
+                _bdKeepMdp = mdp;
                 _bdKeep.Open(this._bdKeepIoConnInfo, this._bdKeepCompKey, null);
                 this.BdKeepHashFile = GetHashFile(this._bdKeepIoConnInfo);
-                ChargerArbreUidGroupes();
+                ChargerArbreUidGroupesKP();
             }
             catch (Exception ex)
             {
@@ -202,6 +246,11 @@ namespace LibAdoBDMdp.BdKeePass
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="iocFile"></param>
+        /// <returns></returns>
         private static byte[] GetHashFile(IOConnectionInfo iocFile)
         {
             if (iocFile == null) { return null; } // Assert only
@@ -228,6 +277,10 @@ namespace LibAdoBDMdp.BdKeePass
             return pbHash;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private bool TesterSiBaseModifiee ()
         {
             byte[] pbOnDisk = GetHashFile(this._bdKeepIoConnInfo);
@@ -239,16 +292,18 @@ namespace LibAdoBDMdp.BdKeePass
             return false;
         }
 
-        private void ChargerArbreUidGroupes()
-        {
-            
+        /// <summary>
+        /// 
+        /// </summary>
+        private void ChargerArbreUidGroupesKP()
+        {            
             PwObjectList<PwGroup> grpDepart =_bdKeep.RootGroup.GetGroups(true);
             _dicUidGroupes.Clear();
             foreach (PwGroup grp in grpDepart)
             {
                 if (! grp.Name.Equals("Recycle Bin"))
                 {
-                    string cle = grp.GetFullPath(SeprateurDossier, false);
+                    string cle = grp.GetFullPath(SeparateurDossierInerne, false);
                     if (! cle.Equals("Recycle Bin/" + grp.Name))
                     {
                         if (_dicUidGroupes.ContainsKey(cle))
@@ -258,72 +313,168 @@ namespace LibAdoBDMdp.BdKeePass
                 }
             }
         }
-        private PwGroup DonnerGroupeKP(string chemin)
-        {
+
+        /// <summary>
+        /// 
+        /// </summary> 
+        /// <param name="chemin"></param>
+        /// <returns></returns>
+        private PwGroup RechercherGroupeKP(string chemin)
+        { 
             PwUuid uidGrpCherche; 
             _dicUidGroupes.TryGetValue(chemin, out uidGrpCherche);
             return (uidGrpCherche != null ? _bdKeep.RootGroup.FindGroup(uidGrpCherche, true) : null);
         }
-        private void RechercherEntreeKP(Parametre param, List<Compte> listeComptesTrouves )
+
+        private PwGroup RechercherCreerGroupeKP(string chemin, bool permetCreation)
         {
-            //Debug.WriteLine("BdMdpKee.RechercherEntreeKP");
-            SearchParameters paramRechercheKee = GenererParamRecherche(param, true);
-            string dossier = param.DonnerValeur("Dossier");
+            PwUuid uidGrpCherche;
+            char[] carSep = new char[] { Convert.ToChar(SeparateurDossierInerne) };
+            _dicUidGroupes.TryGetValue(chemin, out uidGrpCherche);
+            return _bdKeep.RootGroup.FindCreateSubTree(chemin, carSep, permetCreation);
+        }
+
+        private void CreerArborescenceKP(Dictionary<string, Compte> dicoCompte)
+        {
+            char[] carSep = new char[] { Convert.ToChar(SeparateurDossierInerne) };
+            foreach (KeyValuePair<string, Compte> kvp in dicoCompte)
+            {
+                 PwGroup groupe = _bdKeep.RootGroup.FindCreateSubTree(kvp.Key, carSep, true);
+            }            
+        }
+        private PwEntry CreerEntreeKP(Compte compte)
+        {
+            //PwGroup groupCourant;
+
+            PwEntry entreeKP = new PwEntry(true, true);
+            entreeKP.Strings.Set(PwDefs.PasswordField, new ProtectedString(_bdKeep.MemoryProtection.ProtectPassword, compte.Mdp));
+            entreeKP.Strings.Set(PwDefs.TitleField, new ProtectedString(_bdKeep.MemoryProtection.ProtectTitle, compte.NomBase));
+            entreeKP.Strings.Set(PwDefs.UserNameField, new ProtectedString(_bdKeep.MemoryProtection.ProtectUserName, compte.NomCompte));
+            //entreeKP.
+            return entreeKP;
+        }
+
+        private void MettreAJourEntreeKP(Compte compte)
+        {
+            PwUuid uuid = new PwUuid(compte.Uid);
+            PwEntry entry = _grpCourant.FindEntry(uuid, true);
+            if (entry != null)
+            {
+                entry.Strings.Set(PwDefs.PasswordField, new ProtectedString(_bdKeep.MemoryProtection.ProtectPassword, compte.Mdp));
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="listeEntreeKPTrouves"></param>
+        private void RechercherEntreeKP(ParamRechercheBdKP paramRecherche, PwObjectList<PwEntry> listeEntreeKPTrouves)
+        {
+            SearchParameters sp = paramRecherche.GenererSearchParameters();
+            string dossier = paramRecherche.DossierCourant;
             PwGroup grp;
-            if (string.IsNullOrEmpty(dossier) || dossier == "/")
+            if (string.IsNullOrEmpty(dossier) || dossier == this.BdKeepCheminRacine)
                 grp = _bdKeep.RootGroup;
             else
-                 grp = DonnerGroupeKP(dossier);
-                
+                grp = RechercherGroupeKP(dossier);
+
             _grpCourant = grp ?? throw new ArgumentNullException("BdMdpKee.RechercherEntreeKP() : Le dossier " + dossier + " n'existe pas");
-            _grpCourant.SearchEntries(paramRechercheKee, _listeEntrees, _logs);
-            GenererDicoComptes(_listeEntrees);            
-            GenererListeComptes(_listeEntrees, listeComptesTrouves);
+            _grpCourant.SearchEntries(sp, listeEntreeKPTrouves, _logs);
         }
 
-        private SearchParameters GenererParamRecherche(Parametre param, bool bWithText)
+        /// <summary>
+        /// Construit une cle pour un dictionnaire: Dossier/Title/Username
+        /// </summary>
+        /// <param name="entree"></param>
+        /// <returns></returns>
+        private string RenvoyerCleDossierTitleUserName(PwEntry entree, string separateurDossier)
         {
-            SearchParameters paramRechercheKee = new SearchParameters();
+            StringBuilder cle = new StringBuilder();
 
-            if (bWithText)
-                paramRechercheKee.SearchString = param.DonnerValeur("ListeUtis");
-            else 
-                paramRechercheKee.SearchString = string.Empty;
-
-            paramRechercheKee.RegularExpression = Convert.ToBoolean(param.DonnerValeur("RegExp"));
-            paramRechercheKee.SearchInUserNames = true;
-            paramRechercheKee.SearchInTitles = false;
-            paramRechercheKee.SearchInPasswords = false;
-            paramRechercheKee.SearchInUrls = false;
-            paramRechercheKee.SearchInNotes = false;
-            paramRechercheKee.SearchInOther = false;
-            paramRechercheKee.SearchInStringNames = false;
-            paramRechercheKee.SearchInTags = false; 
-            paramRechercheKee.SearchInUuids = false;
-            paramRechercheKee.SearchInGroupNames = false;
-
-            paramRechercheKee.ComparisonMode = (StringComparison.InvariantCulture);
-            //StringComparison.InvariantCultureIgnoreCase);
-
-            paramRechercheKee.ExcludeExpired = false;
-            return paramRechercheKee;
+            cle.Append(separateurDossier).Append(entree.ParentGroup.GetFullPath(separateurDossier, true)).Append(separateurDossier); 
+            cle.Append(entree.Strings.ReadSafe("Title")).Append(separateurDossier);
+            cle.Append(entree.Strings.ReadSafe("UserName")); 
+            return cle.ToString();
+        }
+        private Compte GenererCompte(PwEntry entree)
+        {
+            if (entree == null) throw new NullReferenceException("BdMdpKee.GenererCompte(entree)");
+            Compte compte = new Compte()
+            {
+                Uid = entree.Uuid.UuidBytes,
+                CheminComplet = entree.ParentGroup.GetFullPath(SeparateurDossierInerne, true),
+                NomBase = entree.Strings.ReadSafe("Title"),
+                NomCompte = entree.Strings.ReadSafe("UserName"),
+                Mdp = entree.Strings.ReadSafe("Password"),
+                DtCreation = entree.CreationTime,
+                DtExpiration = entree.ExpiryTime,
+                DtModification = entree.LastModificationTime,
+                EstModifie = false,
+                AExclure = false,
+                Commentaire = string.Empty
+            };
+            return compte;        
         }
 
-
-        private void GenererDicoComptes(PwObjectList<PwEntry> listEntreeKee)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="listEntreeKee"></param>
+        private void GenererDicoComptes(PwObjectList<PwEntry> listEntreeKee, ConstruireCleEntreeKP genererCleKP, Dictionary<string, Compte> dicoCompte)
         {
-            if (_dicComptes == null) throw new NullReferenceException("BdMdpKee.GenererDicoComptes: dicComptes reference nulle");
+            if (dicoCompte == null)
+                dicoCompte = new Dictionary<string, Compte>();
+            else
+                dicoCompte.Clear();
 
-            _dicComptes.Clear();
             foreach (PwEntry entree in listEntreeKee)
             {
-                string cle = RenvoyerCle(_grpCourant, entree);
-                if (! _dicComptes.ContainsKey(cle))
-                    _dicComptes.Add(cle, GenererCompte(entree));
+                string cle = genererCleKP(entree, SeparateurDossierInerne);
+                Debug.WriteLine("GenererDicoComptes "+ cle);
+                if (!dicoCompte.ContainsKey(cle))
+                    dicoCompte.Add(cle, GenererCompte(entree));
             }
         }
 
-        private void GenererListeComptes(PwObjectList<PwEntry> listEntreeKee, List<Compte> listeResultat) 
+        private void GenererDicoComptes(List<Compte> listeCompte, ConstruireCleCompte genererCleCompte, Dictionary<string, Compte> dicoCompte)
+        {
+            if (dicoCompte == null)
+                dicoCompte = new Dictionary<string, Compte>();
+            else
+                dicoCompte.Clear();
+
+            foreach (Compte compte in listeCompte)
+            {
+                string cle = genererCleCompte(compte, SeparateurDossierInerne);
+                if (!dicoCompte.ContainsKey(cle))
+                    dicoCompte.Add(cle, compte);
+            }
+        }
+
+        private void MettreAJourCompte(Compte compteAModifier, Compte compteNouvellesValeurs)
+        {
+            if (string.Compare(compteAModifier.Mdp,compteNouvellesValeurs.Mdp) != 0)
+                compteAModifier.Mdp = compteNouvellesValeurs.Mdp;
+            
+            if (DateTime.Compare(compteAModifier.DtExpiration,compteNouvellesValeurs.DtExpiration) != 0)
+                compteAModifier.DtExpiration = compteNouvellesValeurs.DtExpiration;
+
+        }
+        private string RenvoyerCleDossierBaseUti(Compte compte, string separateurDossier)
+        {
+            StringBuilder cle = new StringBuilder();
+
+            cle.Append(compte.CheminComplet).Append(separateurDossier);
+            cle.Append(compte.NomBase).Append(separateurDossier);
+            cle.Append(compte.NomCompte);
+            return cle.ToString();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="listEntreeKee"></param>
+        /// <param name="listeResultat"></param>
+        private void GenererListeComptes(PwObjectList<PwEntry> listEntreeKee, List<Compte> listeResultat)
         {
 
             if (listeResultat == null)
@@ -337,38 +488,36 @@ namespace LibAdoBDMdp.BdKeePass
             }
         }
 
-        /// <summary>
-        /// Construit une cle pour un dictionnaire: Dossier/Title/Username
-        /// </summary>
-        /// <param name="groupe"></param>
-        /// <param name="entree"></param>
-        /// <returns></returns>
-        private string RenvoyerCle(PwGroup groupe,  PwEntry entree)
+        private void ImporterCompte(ParamRechercheBdKP paramRechercheKP, List<Compte> listeCompteAImporter)
         {
-            StringBuilder cle = new StringBuilder();
+            PwObjectList<PwEntry> listeEntreesKP = new PwObjectList<PwEntry>();
+            Dictionary<string, Compte> dicoComptes = new Dictionary<string, Compte>(); 
 
-            cle.Append(entree.ParentGroup.GetFullPath(SeprateurDossier, true)).Append(SeprateurDossier); 
-            cle.Append(entree.Strings.ReadSafe("Title")).Append(SeprateurDossier);
-            cle.Append(entree.Strings.ReadSafe("UserName")); 
-            return cle.ToString();
-        }
-        private Compte GenererCompte(PwEntry entree)
-        {
-            if (entree == null) throw new NullReferenceException("BdMdpKee.GenererCompte(entree)");
-            Compte compte = new Compte()
+            RechercherEntreeKP(paramRechercheKP, listeEntreesKP);            
+            GenererDicoComptes(listeEntreesKP, RenvoyerCleDossierTitleUserName, dicoComptes);
+
+            foreach (Compte compteAImporter in listeCompteAImporter)
             {
-                Uid = entree.Uuid.UuidBytes,
-                CheminComplet = entree.ParentGroup.GetFullPath(SeprateurDossier, true),
-                NomBase = entree.Strings.ReadSafe("Title"),
-                NomCompte = entree.Strings.ReadSafe("UserName"),
-                Mdp = entree.Strings.ReadSafe("Password"),
-                DtCreation = entree.CreationTime,
-                DtExpiration = entree.ExpiryTime,
-                DtModification = entree.LastModificationTime,
-                EstModifie = false,
-                AExclure = false
-            };
-            return compte;        
+                //PwEntry entreeKP = new PwEntry(true, true); // creation entreeKP avec nouveau uid et mise a jour des dates
+                string cleRecherche = "/"+_bdKeep.RootGroup.Name +RenvoyerCleDossierBaseUti(compteAImporter, paramRechercheKP.SeparateurDossier);
+                Console.WriteLine("ImporterCompte.RenvoyerCleDossierBaseUti()" + cleRecherche);
+                Compte comptePresent;
+                dicoComptes.TryGetValue(cleRecherche, out comptePresent);
+                if (comptePresent != null)
+                {
+                    MettreAJourCompte(comptePresent, compteAImporter);
+                    MettreAJourEntreeKP(comptePresent);
+                    Console.WriteLine("Compte mis à jour" + compteAImporter.NomCompte);
+                }
+                else
+                {
+                    Console.WriteLine("Compte ajouté" + compteAImporter.NomCompte);
+                    PwEntry entreeKP = CreerEntreeKP(compteAImporter);
+                    PwGroup groupe = RechercherCreerGroupeKP(compteAImporter.CheminComplet, true);
+                    groupe.AddEntry(entreeKP, false);
+                }
+
+            }
         }
 
 

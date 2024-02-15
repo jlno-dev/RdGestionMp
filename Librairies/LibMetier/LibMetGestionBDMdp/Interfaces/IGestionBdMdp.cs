@@ -1,6 +1,7 @@
 ﻿ using System.Collections.Generic;
 
 using LibCommune.Entites;
+using LibMetGestionMdp.Interfaces;
 
 namespace LibMetGestionBDMdp.Interfaces
 {
@@ -16,9 +17,10 @@ namespace LibMetGestionBDMdp.Interfaces
         void FermerBase();
         List <Compte> DonnerListeComptes();
         void RechercherCompte(Parametre paramRecherche, List<Compte> listComptes);
-        void RechercherCompte(List<Compte> listComptes);
-
-        void GenererMdp(List<Compte> listeCompte, IGestionBdMdp gestionMdp);
-        void ValiderModificationMdp(List<Compte> listeCompte);
+        //void RechercherCompte(List<Compte> listComptes);
+        void GenererMdp(List<Compte> listeCompte, IGestionMdp gestionMdp);
+        void ModifierCompteMotDePasse(List<Compte> listeCompte);
+        //void Importer(List<Compte> listCompte);
+        void Importer(Parametre paramRecherche, List<Compte> listCompte);
     }
 }

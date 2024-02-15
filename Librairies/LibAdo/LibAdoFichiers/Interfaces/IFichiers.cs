@@ -15,7 +15,7 @@ namespace LibAdoFichiers.Interfaces
         void Ecrire(StreamWriter fluxEcrire);
         void Lire(StreamReader fluxACharger);
         void EcrireTout(string[] donnees);
-        string LireTout();
+        string[] LireTout();
 
     }
 }

@@ -52,6 +52,8 @@
   <ItemGroup>
     <Compile Include="Interfaces\IGestionBdMdp.cs" />
     <Compile Include="KeePass\GestionBdMdpKee.cs" />
+    <Compile Include="KeePass\GestionParamBdMdpKee.cs" />
+    <Compile Include="KeePass\GestionParamRechercheKP.cs" />
     <Compile Include="KeePass\ParamBdMdpKee.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

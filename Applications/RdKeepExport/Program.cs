@@ -6,7 +6,7 @@ namespace RdKeepExport
     {
         static int Main(string[] args)
         {
-            return new Traitement().Executer(args);
+            return new TrtExport().Executer(args);
         }
     }
 }

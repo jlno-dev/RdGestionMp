@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Classes\FichierTexte.cs" />
     <Compile Include="Entites\FichierEnumeration.cs" />
+    <Compile Include="Entites\FichierTexte.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

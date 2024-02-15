@@ -41,9 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entites\ConversionCompte.cs" />
+    <Compile Include="Entites\EchangeDonnees.cs" />
     <Compile Include="Export\Csv\ExportCompteCsv.cs" />
     <Compile Include="Entites\ParamExportCsv.cs" />
+    <Compile Include="Formats\FichierFormatCsv.cs" />
+    <Compile Include="Formats\ParamFormatCsv.cs" />
+    <Compile Include="Interfaces\ICompteTransformable.cs" />
+    <Compile Include="Interfaces\IDonneesConvertible.cs" />
     <Compile Include="Interfaces\IExportable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

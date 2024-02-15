@@ -47,6 +47,8 @@
   <ItemGroup>
     <Compile Include="BdKeePass\BdMdpKee.cs" />
     <Compile Include="BdKeePass\ParamBdMdpKee.cs" />
+    <Compile Include="BdKeePass\ParamRechercheBdKP.cs" />
+    <Compile Include="Delegues\Delegues.cs" />
     <Compile Include="Interfaces\IBdMdp.cs" />
     <Compile Include="Interfaces\IDbConnecteurs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
