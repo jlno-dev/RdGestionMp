@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
 using CommandLine;
 using LibCommune.Entites;
+using LibMetExchangeDonnee.Formats;
+using LibMetGestionBDMdp.KeePass;
 
 namespace RdKeepExport.Options
 {
@@ -27,106 +28,48 @@ namespace RdKeepExport.Options
     // ----------------------------------------------------------------------------
     public class OptionArg
     {
-        private Parametre _paramOptions;
-
-        //#region definition des options
+        #region definition des options utilise par commandline
         [Option('a', "", Default = false)]
-        public bool ArgAfficher
-        {
-            get => Convert.ToBoolean(_paramOptions.DonnerValeur("ArgAfficher"));
-            set => _paramOptions.Ajouter(nomParam: "ArgAfficher", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
+        public bool ArgAfficher { get; set; }
 
         [Option('d', "dossier", HelpText = "ex: BaseDeDonnees/oracle/REC (format KeePass)")]
-        public string ArgDossier
-        {
-            get => _paramOptions.DonnerValeur("ArgDossier");
-            set => _paramOptions.Ajouter(nomParam: "ArgDossier", valeurParam: value, modifierSiExsite: true);
-        }
+        public string ArgDossier { get; set; }
           
         [Option('i', "fichierkeepass", HelpText = "-i keepass.kdbx")]
-        public string ArgFichierBdMdp
-        {
-            get => _paramOptions.DonnerValeur("ArgFichierBdMdp");
-            set => _paramOptions.Ajouter(nomParam: "ArgFichierBdMdp", valeurParam: value, modifierSiExsite: true);
-        }
+        public string ArgFichierBdMdp { get; set; }
 
 
         [Option('o', "fichierexport", HelpText = "-o fichierexport")]
-        public string ArgFichierExport
-        {
-            get => _paramOptions.DonnerValeur("ArgFichierExport");
-            set => _paramOptions.Ajouter(nomParam: "ArgFichierExport", valeurParam: value, modifierSiExsite: true);
-        }
+        public string ArgFichierExport { get; set; }
 
         [Option('p', "motdepasse")]
-        public string ArgMotDePasse
-        {
-            get => _paramOptions.DonnerValeur("ArgMotDePasse");
-            set => _paramOptions.Ajouter(nomParam: "ArgMotDePasse", valeurParam: value, modifierSiExsite: true);
-        }
+        public string ArgMotDePasse { get; set; }
 
         [Option('t',"SepCsv", Default = ';')]
-        public string ArgSepCsv
-        {
-            get => _paramOptions.DonnerValeur("ArgSepCsv");
-            set => _paramOptions.Ajouter(nomParam: "ArgSepCsv", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
+        public string ArgSepCsv { get; set; }
 
-        [Option('u', "utis", HelpText = "-u uti1,uti2,uti3 ...")]
-        public string ArgUtis
-        {
-            get => _paramOptions.DonnerValeur("ArgUtis");
-            set => _paramOptions.Ajouter(nomParam: "ArgUtis", valeurParam: value, modifierSiExsite: true);
-        }
+        [Option('u', "utis", Default = "", HelpText = "-u uti1,uti2,uti3 ...")]
+        public string ArgUtis { get; set; }
 
         [Option('v', "", Default = false)]
-        public bool AExclure
-        {
-            get => Convert.ToBoolean(_paramOptions.DonnerValeur("AExclure"));
-            set => _paramOptions.Ajouter(nomParam: "AExclure", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
+        public bool AExclure { get; set; }
 
         [Option('E', "", Default = false)]
-        public bool ArgSiRegExp
-        {
-            get => Convert.ToBoolean(_paramOptions.DonnerValeur("ArgSiRegExp"));
-            set => _paramOptions.Ajouter(nomParam: "ArgSiRegExp", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
+        public bool ArgSiRegExp { get; set; }
 
         [Option('g', "Guillemet", Default = true)]
-        public bool ArgSiGuillemet
-        {
-            get => Convert.ToBoolean(_paramOptions.DonnerValeur("ArgSiGuillemet"));
-            set => _paramOptions.Ajouter(nomParam: "ArgSiGuillemet", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
+        public bool ArgSiGuillemet { get; set; }
 
         [Option('e', "Entete", Default = true)]
-        public bool ArgSiEntete
-        {
-            get => Convert.ToBoolean(_paramOptions.DonnerValeur("ArgSiEntete"));
-            set => _paramOptions.Ajouter(nomParam: "ArgSiEntete", valeurParam: value.ToString(), modifierSiExsite: true);
-        }
-        public OptionArg()
-        {
-            _paramOptions = new Parametre();
-            ArgUtis = string.Empty;
-        }
+        public bool ArgSiEntete { get; set; }
+        #endregion
 
         public void Valider()
         {
             if (!string.IsNullOrEmpty(ArgFichierBdMdp)) throw new ArgumentOutOfRangeException("option -i <> manquante");
-            //    throw new ArgumentException("Impossible de combiner les options -m et -c ");
-
-            //if (ArgLongueur < 1) throw new ArgumentOutOfRangeException("");
-
+            if (!string.IsNullOrEmpty(ArgFichierExport)) throw new ArgumentOutOfRangeException("option -o <> manquante");
         }
-        public Dictionary<string, string> RetournerOptions()
-        {
-            Dictionary<string, string> dico = new Dictionary<string, string>();
-            _paramOptions.Cloner(dico);
-            return dico;
-        }
+
         public string RenvoyerAide()
         {
             StringBuilder st = new StringBuilder("Arguments disponibles pour RdKeepExport.exe:").Append("\n");
@@ -142,6 +85,30 @@ namespace RdKeepExport.Options
             st.Append("-g                   : Ajoute des guillemets à chaque champs[par défaut true]");
             st.Append("-e                   : Ajoute en entete du fichier csv le noms des colonnes[par défaut true]");
             return st.ToString();
+        }
+
+        public ParamFormatCsv GenererParamFormatCsv()
+        {
+            return new ParamFormatCsv() {
+                NomFichierCsv = this.ArgFichierExport,
+                SeparateurCsv = this.ArgSepCsv,
+                SiDoubleQuote = this.ArgSiGuillemet,
+                SiEntete = this.ArgSiEntete,
+                NumLigneLecture = 0
+                };
+        }
+        public GestionParamRechercheKP GenererGestionParamRechercheKP()
+        {
+            return new GestionParamRechercheKP() {
+                SiExpressionReg = this.ArgSiRegExp,
+                ChaineACherche = (this.ArgUtis ?? string.Empty),
+                ExclurePoubelle = true,
+                RechecheDansTitre = false,
+                RechercheDansGroupe = false,
+                RechercheDansUti = true,
+                SeparateurDossier = "/",
+                DossierCourant = "/"
+                };
         }
 
     } // class

@@ -20,6 +20,9 @@ namespace LibCommune.Entites
         public DateTime DtExpiration { get; set; }
         public bool EstModifie { get; set; }
         public bool AExclure { get; set; }
+        public string Commentaire { get; set; }
+        public bool SiValide { get; set; }
+        public string Message { get; set; }
 
         static public string[] DonnerNomChamps()//char carSeparateur)
         {
@@ -31,7 +34,7 @@ namespace LibCommune.Entites
             ,"DateModification"
             };
 
-        }
+        } 
         public override string ToString()
         {
             StringBuilder ligneComte = new StringBuilder();
@@ -59,6 +62,12 @@ namespace LibCommune.Entites
             //return tabCompte;
 
             //return this.ToString().Split(carSeparation);
+        }
+
+        public bool SiCompteValide ()
+        {
+            return (string.IsNullOrEmpty(this.CheminComplet) || string.IsNullOrEmpty(this.NomCompte)
+                || string.IsNullOrEmpty(this.Mdp));
         }
 
         protected virtual void Dispose(bool disposing)

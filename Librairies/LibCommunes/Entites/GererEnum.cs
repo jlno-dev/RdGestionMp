@@ -259,5 +259,14 @@ namespace LibCommune.Entites
             return typeCar;
         }
 
+        public static int RenvoyerCodeRetourErr()
+        {
+            return Convert.ToInt32(ECodeRetour.CodeRetourErr);
+        }
+
+        public static int RenvoyerCodeRetourOk()
+        {
+            return Convert.ToInt32(ECodeRetour.CodeRetourOk);
+        }
     } // classe
 } // namespace

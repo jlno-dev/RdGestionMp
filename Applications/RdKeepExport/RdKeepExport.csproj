@@ -47,11 +47,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Options\ConversionOptArgVersParam.cs" />
     <Compile Include="Options\OptionArg.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Traitements\Traitement.cs" />
+    <Compile Include="Traitements\TrtExport.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

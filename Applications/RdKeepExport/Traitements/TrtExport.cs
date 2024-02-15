@@ -10,24 +10,21 @@ using LibCommune.Entites;
 using LibInterfaceUti.Interfaces;
 using LibInterfaceUti.UiConsole;
 using LibMetGestionBDMdp.KeePass;
-using LibMetExchangeDonnee.Csv;
-using LibMetExchangeDonnee.Interfaces;
-using LibMetExchangeDonnee.Entites;
-
-
-using System.IO;
+using LibMetExchangeDonnee.Formats;
 
 namespace RdKeepExport.Traitements
-{    public class Traitement
+{    public class TrtExport
     {
         /*
          * Ouvrir la base des mots de passe
-         * Saisir le mot de passe (saisie cachée) si non passé en paramètre
-         * Recherche des comptes avec les filtes specifies -u xxx,xxx -E -v
+         * Saisir le mot de passe (saisie cachée)
+         * Modifier et/ou Afficher le format du mot de passe
+         * Modififer mpd (-d dossier=> filtrés par dossier, -u=> utilisateurs)
+         * Afficher les comptes modifiés(nom, nouvelle date expiration)
          * Verifier si modification de la base par un autre processus
          * Si oui Demander si Synchroniser|Annuler|Ecraser
-         *  Fermeture de la base
-         * Exporter les comptesformates en csv -t <separateur> -g <guillement> - e<ajouter entete>
+         * Fermer la base
+         * Exporter les comptes modifiés si demande (-c <fichiercsv>)
         */
 
         public int Executer(string[] args)
@@ -55,26 +52,33 @@ namespace RdKeepExport.Traitements
             //if (optArgs.ArgAfficher) 
             //    interfaceUti.AfficherDico(optArgs.RetournerOptions());
 
-            IExportable gestionExportCsv = CreerGestionnaireExportCsv(optArgs);
+            FichierFormatCsv fichierFormatCsv = CreerGestionnaireFormatCsv(optArgs);
             IGestionBdMdp gestionBdMdp = CreerGestionnaireBdMdp(optArgs);
-            return  ExporterComptes(gestionBdMdp, gestionExportCsv, optArgs, interfaceUti);
+            return  ExporterComptes(gestionBdMdp, fichierFormatCsv, optArgs, interfaceUti);
         }
 
-        private IExportable CreerGestionnaireExportCsv(OptionArg optArg)
+        /// <summary>
+        /// 
+        /// </summary>
+        private FichierFormatCsv CreerGestionnaireFormatCsv(OptionArg optArg)
         {
-            Parametre paramExport = new ParamExportCsv();
-            ConversionOptArgVersParam.ConvertirVersParamExport(optArg, paramExport);
-            IExportable gestionExportCsv = new ExportCompteCsv(paramExport);
-            return gestionExportCsv;
+            return new FichierFormatCsv(optArg.GenererParamFormatCsv());
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="optArg"></param>
+        /// <returns></returns>
         private IGestionBdMdp CreerGestionnaireBdMdp(OptionArg optArg)
         {            
-            Parametre paramBdMdp = new ParamBdMdpKee();
-            ConversionOptArgVersParam.ConvertirVersParamkee(optArg, paramBdMdp);
-            IGestionBdMdp gestionBdMdp = new GestionBdMdpKee(paramBdMdp);
+            IGestionBdMdp gestionBdMdp = new GestionBdMdpKee(optArg.ArgFichierBdMdp);
             return gestionBdMdp;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private string [] DonnerOptionParDefaut()
         {
             return new string[] {
@@ -89,14 +93,22 @@ namespace RdKeepExport.Traitements
                     ,"-a"
                     };
         }
-        private int ExporterComptes(IGestionBdMdp gestionBdMdp, IExportable gestionExportCsv, OptionArg optArg, IInterfaceUti interfaceUti)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="gestionBdMdp"></param>
+        /// <param name="fichierFormatCsv"></param>
+        /// <param name="optArg"></param>
+        /// <param name="interfaceUti"></param>
+        /// <returns></returns>
+        private int ExporterComptes(IGestionBdMdp gestionBdMdp, FichierFormatCsv fichierFormatCsv, OptionArg optArg, IInterfaceUti interfaceUti)
         {
             try
             {
                 gestionBdMdp.OuvrirBase(optArg.ArgMotDePasse);
 
                 List<Compte> listeCompte = new List<Compte>();
-                gestionBdMdp.RechercherCompte(listeCompte);
+                gestionBdMdp.RechercherCompte(optArg.GenererGestionParamRechercheKP(), listeCompte);
                 if (listeCompte.Count > 0)
                 {
                     if (gestionBdMdp.SiBaseModifiee)
@@ -113,7 +125,7 @@ namespace RdKeepExport.Traitements
                         }
                     }
 
-                    gestionExportCsv.Exporter(listeCompte);
+                    fichierFormatCsv.Exporter(listeCompte);
                     string message = listeCompte.Count.ToString() + " comptes exportés dans " + optArg.ArgFichierExport;
                     interfaceUti.AfficherMessage(message);
                 }
@@ -121,13 +133,13 @@ namespace RdKeepExport.Traitements
                 {
                     interfaceUti.AfficherMessage("Ce(s) compte(s) [" + optArg.ArgUtis +"] n'existe(nt) pas ");
                 }
-                return Convert.ToInt32(ECodeRetour.CodeRetourOk);
+                return GererEnum.RenvoyerCodeRetourOk(); 
             }
             catch (Exception e)
             {
                 
                 interfaceUti.AfficherMessage(e.Message);
-                return 1;
+                return GererEnum.RenvoyerCodeRetourErr();
             }
             finally
             {

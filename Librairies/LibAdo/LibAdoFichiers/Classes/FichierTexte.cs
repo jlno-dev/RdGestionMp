@@ -46,9 +46,9 @@ namespace LibAdoFichiers.Classes
             }
         } 
 
-        public string LireTout()
+        public string[] LireTout()
         {
-            return File.ReadAllText(InfoFichier.FullName);
+            return File.ReadAllLines(InfoFichier.FullName);
 
             //using (StreamReader sr = new StreamReader(infoFichier.NomFichier))
             //{

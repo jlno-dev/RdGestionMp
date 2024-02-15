@@ -46,6 +46,16 @@ namespace LibMetGestionBDMdp.Randstad
             throw new NotImplementedException();
         }
 
+        public void Importer(Parametre paramRecherche, List<Compte> listCompte)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ModifierCompteMotDePasse(List<Compte> listeCompte)
+        {
+            throw new NotImplementedException();
+        }
+
         public void OuvrirBase()
         {
             throw new NotImplementedException();

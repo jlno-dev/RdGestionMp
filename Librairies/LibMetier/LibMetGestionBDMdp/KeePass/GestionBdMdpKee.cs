@@ -15,81 +15,46 @@ namespace LibMetGestionBDMdp.KeePass
 {
     public class GestionBdMdpKee : IGestionBdMdp
     {
-        private IBdMdp _keeBd;
-        private ParamBdMdpKee _params;
-          
-        public GestionBdMdpKee(Parametre param)
-        {
-            Initialiser((ParamBdMdpKee)param);
-        }
-        public GestionBdMdpKee(string keeFichier)
-        {
-            Initialiser(keeFichier, string.Empty);
-        }
-        public GestionBdMdpKee(string keeFichier, string keeMdp)
-        {
-            Initialiser(keeFichier, keeMdp);
-        }
+        private IBdMdp _BaseMdpKP;
 
-        private void Initialiser(string keeFichier, string keeMdp)
-        {
-            ParamBdMdpKee paramBdMdpKee = new ParamBdMdpKee();
-            paramBdMdpKee.NomFichier = keeFichier;
-            paramBdMdpKee.Mdp = keeMdp;
-            Initialiser(paramBdMdpKee);
-        }
-
-        private void Initialiser(ParamBdMdpKee param)
-        {
-            if (param == null) throw new ArgumentNullException("GestionBdMdpdKee.Initialiser(ParamBdMdpKee param)");
-            _params = param;
-            _keeBd = new BdMdpKee(_params.NomFichier,_params.Mdp);            
-        }
 
         #region interface IGestionnaireMdp
         public bool SiBaseModifiee
         {
-            get { return _keeBd.SiBaseModifiee; }
+            get { return _BaseMdpKP.SiBaseModifiee; }
         }
         public bool SiModificationValidee
         {
-            get { return _keeBd.SiModificationValidee; }
+            get { return _BaseMdpKP.SiModificationValidee; }
         }
 
         public List<Compte> DonnerListeComptes()
         {
-            return _keeBd.DonnerListeComptes();
+            return _BaseMdpKP.DonnerListeComptes();
         }
 
         public void FermerBase()
         {
-            _keeBd.FermerBase();
+            _BaseMdpKP.FermerBase();
         }
 
         public void FusionnerDonnees()
         {
-            _keeBd.Synchroniser();
+            _BaseMdpKP.Synchroniser();
         }
 
         public void OuvrirBase()
         {
-            _keeBd.OuvrirBase();
+            _BaseMdpKP.OuvrirBase();
         }
         public void OuvrirBase(string mdp)
         {
-            //try
-            //{
-                _keeBd.OuvrirBase(mdp);
-            //}
-            //catch (Exception ex)
-            //{
-            //    throw new Exception(ex.Message);
-            //}
+                _BaseMdpKP.OuvrirBase(mdp);
         }
 
         public void SauvegarderBase()
         {
-            _keeBd.SauvegarderBase();
+            _BaseMdpKP.SauvegarderBase();
         }
 
         public void GenererMdp(List<Compte> listeComptes, IGestionMdp gestionMdp)
@@ -102,23 +67,34 @@ namespace LibMetGestionBDMdp.KeePass
 
         public void RechercherCompte(Parametre param, List<Compte> listeCptResultat)
         {
-            _keeBd.RechercherComptes(param, listeCptResultat);
+            ParamRechercheBdKP paramKP = ((GestionParamRechercheKP)param).GenererParamRechercheBdKP();
+            _BaseMdpKP.RechercherComptes(paramKP, listeCptResultat);
         }
 
-        public void RechercherCompte(List<Compte> listComptes)
+        public void ModifierCompteMotDePasse(List<Compte> listeCompte)
         {
-            _keeBd.RechercherComptes(_params, listComptes);
+            _BaseMdpKP.ModifierCompteMotDePasse(listeCompte);
+        }
+        public void Importer(Parametre param, List<Compte> listeCompte)
+        {
+            ParamRechercheBdKP paramKP = ((GestionParamRechercheKP)param).GenererParamRechercheBdKP();
+            _BaseMdpKP.Importer(paramKP, listeCompte);
         }
 
-        public void ValiderModificationMdp(List<Compte> listeCompte)
-        {
-            _keeBd.ValiderModificationMdp(listeCompte);
-        }
-
-        public void GenererMdp(List<Compte> listeCompte, IGestionBdMdp gestionMdp)
-        {
-            throw new NotImplementedException();
-        }
         #endregion
+        public GestionBdMdpKee(string fichierKP)
+        {
+            Initialiser(fichierKP, string.Empty);
+        }
+        public GestionBdMdpKee(string fichierKP, string mdpKP)
+        {
+            Initialiser(fichierKP, mdpKP);
+        }
+
+        private void Initialiser(string fichierKP, string mdpKP)
+        {
+            if (string.IsNullOrEmpty(fichierKP)) throw new ArgumentNullException("GestionBdMdpKee.Initialiser.fichierKP");
+            _BaseMdpKP = new BdMdpKee(fichierKP, mdpKP);
+        }
     }
 }
