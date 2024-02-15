@@ -1,0 +1,36 @@
+        public static MemoryStream ConvertirChaineEnFlux(string pChaine, Encoding pTypeEncodage)
+        {
+            //string lNomProcedure = System.Reflection.MethodBase.GetCurrentMethod().Name; 
+            
+            // A ne pas faire
+                //MemoryStream lsmsRetour = new MemoryStream();
+                //StreamWriter lswEcriture = new StreamWriter(lsmsRetour);
+                //lswEcriture.Write(pChaine);
+                //lswEcriture.Flush();
+                //lsmsRetour.Position = 0;
+           
+                //Console.WriteLine("===>{0}(): Flux.long {1} Chaine[{2}]: {3}", lNomProcedure, lsmsRetour.Length, pChaine.Length, pChaine);
+                //return lsmsRetour;
+
+            MemoryStream lsmsRetour = new MemoryStream(pTypeEncodage.GetBytes(pChaine));
+             //Console.WriteLine("===>{0}(): Flux.long {1} Chaine[{2}]: {3}", lNomProcedure, lsmsRetour.Length, pChaine.Length, pChaine);
+             return lsmsRetour;
+
+        }
+
+
+        public static string ConvertirFluxEnChaine(MemoryStream pFlux, Encoding pTypeEncodage)
+        {
+            //string lNomProcedure = System.Reflection.MethodBase.GetCurrentMethod().Name; 
+            MemoryStream lmsTmp = pFlux;
+            return pTypeEncodage.GetString(lmsTmp.ToArray());
+             
+                // A ne pas faire
+                 //MemoryStream lmsTmp = pFlux;  
+                //lmsTmp.Position = 0;
+                //string lChaine = new StreamReader(lmsTmp).ReadToEnd();
+
+                //string lChaine = Encoding.Default.GetString(lmsTmp.ToArray());
+                //Console.WriteLine("===>{0}(): Flux.long {1} Chaine[{2}]: {3}", lNomProcedure, lmsTmp.Length, lChaine.Length, lChaine);
+            
+        }
